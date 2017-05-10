@@ -1,4 +1,17 @@
 import { RequestHandler, Router } from 'express'
+import Http = require('http')
+
+/** 
+ * 
+ * @export
+ * @class HttpError 
+ */
+export class HttpError extends Error {
+    constructor(public readonly status: number, message?: string) {
+        super(message || Http.STATUS_CODES[status])
+        this.name = Http.STATUS_CODES[status]
+    }
+}
 
 /**
  * Wrap a request handler that might return promise, to handle promise error 
@@ -31,7 +44,7 @@ export function hang(router: Router) {
             return next();
 
         // response service unavailable
-        res.sendStatus(503).end()
+        next(new HttpError(503, 'Under initalizing'))
     })
 
     return {
@@ -41,7 +54,7 @@ export function hang(router: Router) {
                     await task()
                     initDone = true
                 } catch (e) {
-                    console.error("Failed to init:", e);
+                    console.error("Failed to initialize:", e);
                     process.exit(1);
                 }
             })()
